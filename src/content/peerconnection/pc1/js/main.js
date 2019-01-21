@@ -45,6 +45,7 @@ let pc1;
 let pc2;
 let dc;
 let destination;
+let senderwart;
 const offerOptions = {
   offerToReceiveAudio: 0,
   offerToReceiveVideo: 0
@@ -83,6 +84,7 @@ class WebRTC {
         console.warn('webrtc.wasm loaded:', Date.now() - time, 'ms');
         console.log('wasm module:', Module);
         // this._showTheStartButton();
+        this.start();
       };
     };
 
@@ -378,6 +380,7 @@ async function call() {
   } catch (e) {
     onCreateSessionDescriptionError(e);
   }
+  senderwart = new WebRTC(false, document.querySelector("#localVideo"), dc);
 }
 
 function onCreateSessionDescriptionError(error) {
