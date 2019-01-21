@@ -125,7 +125,7 @@ class WebRTC {
       },
       sendPacket: function (payload) {
         // console.log(payload);
-        // console.log('Sending a RTP packet:', payload.length, 'bytes', payload);
+        //console.log('Sending a RTP packet:', payload.length, 'bytes', payload);
         // uistats.rtpSendSize.set(payload.length);
         // console.log('Sending a RTP packet:', payload.length, 'bytes');
         this.count++;
@@ -211,25 +211,24 @@ class WebRTC {
 
       // while we have something in the queue, send it right away! hopefully
       // webrtc is ok with that.
-      let sendBuffer = new Module.VectorInt16();
-      for (let i = 0; i < 2 * 480; i++) {
-        sendBuffer.push_back(sendingQueue[i]);
-      }
+      while(sendingQueue.length > 2 * 441) {
+        let sendBuffer = new Module.VectorInt16();
+        for (let i = 0; i < 2 * 441; i++) {
+          sendBuffer.push_back(sendingQueue[i]);
+        }
 
-      while(sendingQueue.length > 2 * 480) {
         // console.log("sending packet, current_length=" + sendingQueue.length);
-        sendingQueue.splice(0, 2 * 480);
+        sendingQueue.splice(0, 2 * 441);
 
         const audioFrame = new Module.AudioFrame();
         audioFrame.setNumChannels(2);
-        audioFrame.setSampleRateHz(48000);
+        audioFrame.setSampleRateHz(44100);
         audioFrame.setSamplesPerChannel(sendBuffer.size() / 2);
         audioFrame.setData(sendBuffer);
         audioSendStream.sendAudioData(audioFrame);
+        // best garbage collection I can think of
+        sendBuffer.delete();
       }
-
-      // best garbage collection I can think of
-      sendBuffer.delete();
     }
 
     let receiveAudioCodecs = new Module.VectorAudioCodec();
