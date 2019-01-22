@@ -143,9 +143,9 @@ class WebRTC {
       ssrc: 123,
       cname: 'cname',
       payloadType: 42,
-      codecName: 'opus',
-      clockrateHz: 48000,
-      numChannels: 2,
+      codecName: 'pcmu',
+      clockrateHz: 8000,
+      numChannels: 1,
     });
     audioSendStream.start();
 
@@ -238,9 +238,9 @@ class WebRTC {
     let receiveAudioCodecs = new Module.VectorAudioCodec();
     receiveAudioCodecs.push_back({
       payloadType: 42,
-      name: 'opus',
-      clockrateHz: 48000,
-      numChannels: 2,
+      name: 'pcmu',
+      clockrateHz: 8000,
+      numChannels: 1,
     });
     let receiveStream = call.createAudioReceiveStream({
       localSsrc: 345,
