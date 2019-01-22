@@ -202,29 +202,30 @@ class WebRTC {
       // TODO: Receiver w/ remote data.
     }
 
-    function sendAudio(floatBufferChannel1, floatBufferChannel2, sampleRate) {
+    function sendAudio(floatBufferChannel1, /*floatBufferChannel2, */sampleRate) {
       const numSamples = sampleRate / 100;
+      const numChannels = 1;
       // buffer in
       for (let i = 0; i < floatBufferChannel1.length; i++) {
         sendingQueue.push(floatToInt(floatBufferChannel1[i]));
-        sendingQueue.push(floatToInt(floatBufferChannel2[i]));
+        // sendingQueue.push(floatToInt(floatBufferChannel2[i]));
       }
 
       // while we have something in the queue, send it right away! hopefully
       // webrtc is ok with that.
-      while(sendingQueue.length > 2 * numSamples) {
+      while(sendingQueue.length > numChannels * numSamples) {
         let sendBuffer = new Module.VectorInt16();
-        for (let i = 0; i < 2 * numSamples; i++) {
+        for (let i = 0; i < numChannels * numSamples; i++) {
           sendBuffer.push_back(sendingQueue[i]);
         }
 
         // console.log("sending packet, current_length=" + sendingQueue.length);
-        sendingQueue.splice(0, 2 * numSamples);
+        sendingQueue.splice(0, numChannels * numSamples);
 
         const audioFrame = new Module.AudioFrame();
-        audioFrame.setNumChannels(2);
+        audioFrame.setNumChannels(numChannels);
         audioFrame.setSampleRateHz(sampleRate);
-        audioFrame.setSamplesPerChannel(sendBuffer.size() / 2);
+        audioFrame.setSamplesPerChannel(sendBuffer.size() / numChannels);
         audioFrame.setData(sendBuffer);
         audioSendStream.sendAudioData(audioFrame);
         // best garbage collection I can think of
@@ -254,15 +255,16 @@ class WebRTC {
       console.warn('Activating webrtc audio');
       var audioCtx = new AudioContext();
       var source = audioCtx.createMediaStreamSource(localStream);
-      var processor = audioCtx.createScriptProcessor(framesPerPacket, 2, 2);
-      // var processor = stream.context.createScriptProcessor(0, 1, 1);
+      // var processor = audioCtx.createScriptProcessor(framesPerPacket, 2, 2);
+      var processor = audioCtx.createScriptProcessor(framesPerPacket, 1, 1);
       source.connect(processor).connect(audioCtx.destination);
       processor.onaudioprocess = function (e) {
         var channelData = e.inputBuffer.getChannelData(0);
-        var channelData2 = e.inputBuffer.getChannelData(0);
+        // could look at e.inputBuffer.numChannels
+        // var channelData2 = e.inputBuffer.getChannelData(0); // (0) was wrong???
         // console.log('captured audio ' + channelData.length);
         // console.log(channelData);
-        sendAudio(channelData, channelData2, e.inputBuffer.sampleRate);
+        sendAudio(channelData, /*channelData2, */e.inputBuffer.sampleRate);
       }
 
       // And playback, hacky, using script processor
