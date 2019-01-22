@@ -278,14 +278,22 @@ class WebRTC {
       oscillator.type = 'square';
       oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // value in hertz
       oscillator.connect(playbackProcessor).connect(audioCtx.destination);
+      let recvCount = 0;
+      let lastRecv = Date.now();
+      setInterval(() => {
+        const now = Date.now();
+        console.log('recv', recvCount, Math.floor(1000 * recvCount / (now - lastRecv)));
+        recvCount = 0;
+        lastRecv = now;
+      }, 1000);
       playbackProcessor.onaudioprocess = function (e) {
         var outputBuffer = e.outputBuffer;
         var channel1 = outputBuffer.getChannelData(0);
         var channel2 = outputBuffer.getChannelData(1);
         let numberOfPulls = channel1.length / 441;
-        console.log(channel1.length);
         var offset = 0;
         for(i=0; i < numberOfPulls; i++) {
+          recvCount++;
           const audioFrame = new Module.AudioFrame();
           audioFrame.setNumChannels(2);
           audioFrame.setSampleRateHz(44100);
