@@ -51,7 +51,7 @@ const offerOptions = {
   offerToReceiveVideo: 0
 };
 
-const framesPerPacket = 512;
+const framesPerPacket = 256;
 const receivingSamplesPerCallback = 2048;
 
 class WebRTC {
@@ -202,7 +202,8 @@ class WebRTC {
       // TODO: Receiver w/ remote data.
     }
 
-    function sendAudio(floatBufferChannel1, floatBufferChannel2) {
+    function sendAudio(floatBufferChannel1, floatBufferChannel2, sampleRate) {
+      const numSamples = sampleRate / 100;
       // buffer in
       for (let i = 0; i < floatBufferChannel1.length; i++) {
         sendingQueue.push(floatToInt(floatBufferChannel1[i]));
@@ -211,18 +212,18 @@ class WebRTC {
 
       // while we have something in the queue, send it right away! hopefully
       // webrtc is ok with that.
-      while(sendingQueue.length > 2 * 441) {
+      while(sendingQueue.length > 2 * numSamples) {
         let sendBuffer = new Module.VectorInt16();
-        for (let i = 0; i < 2 * 441; i++) {
+        for (let i = 0; i < 2 * numSamples; i++) {
           sendBuffer.push_back(sendingQueue[i]);
         }
 
         // console.log("sending packet, current_length=" + sendingQueue.length);
-        sendingQueue.splice(0, 2 * 441);
+        sendingQueue.splice(0, 2 * numSamples);
 
         const audioFrame = new Module.AudioFrame();
         audioFrame.setNumChannels(2);
-        audioFrame.setSampleRateHz(44100);
+        audioFrame.setSampleRateHz(sampleRate);
         audioFrame.setSamplesPerChannel(sendBuffer.size() / 2);
         audioFrame.setData(sendBuffer);
         audioSendStream.sendAudioData(audioFrame);
@@ -261,7 +262,7 @@ class WebRTC {
         var channelData2 = e.inputBuffer.getChannelData(0);
         // console.log('captured audio ' + channelData.length);
         // console.log(channelData);
-        sendAudio(channelData, channelData2);
+        sendAudio(channelData, channelData2, e.inputBuffer.sampleRate);
       }
 
       // And playback, hacky, using script processor
