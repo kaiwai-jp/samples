@@ -44,6 +44,7 @@ let localStream;
 let pc1;
 let pc2;
 let dc;
+let dc2;
 let destination;
 let senderwart;
 const offerOptions = {
@@ -106,18 +107,17 @@ class WebRTC {
           this.count = 0;
           last = now;
         }, 1000);
-        dc.onmessage = event => {
+        dc2.onmessage = event => {
           const time = Date.now();
           const packet = new Uint8Array(event.data);
           // uistats.rtpRecvSize.set(packet.length);
-          console.log('Received a RTP packet:', packet.length, 'bytes', packet);
+          // console.log('Received a RTP packet:', packet.length, 'bytes', packet);
           let receivedBuffer = new Module.VectorUint8();
-          for (i = 0; i < packet.length; i++) {
+          for (let i = 0; i < packet.length; i++) {
             receivedBuffer.push_back(packet[i]);
           }
           call.deliverPacket(receivedBuffer);
           // uistats.audioDecTime.set(Date.now() - time);
-          this.count = 0;
         };
       },
       __destruct: function () {
@@ -270,6 +270,7 @@ class WebRTC {
       // And playback, hacky, using script processor
       var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       destination = audioCtx.createMediaStreamDestination();
+      document.querySelector("#remoteVideo").srcObject = destination.stream;
       var playbackProcessor = audioCtx.createScriptProcessor(receivingSamplesPerCallback, 2, 2);
       var oscillator = audioCtx.createOscillator();
       oscillator.type = 'square';
@@ -383,6 +384,9 @@ async function call() {
     onCreateSessionDescriptionError(e);
   }
   senderwart = new WebRTC(false, document.querySelector("#localVideo"), dc);
+  pc2.ondatachannel = (e) => {
+    dc2 = e.channel;
+  };
 }
 
 function onCreateSessionDescriptionError(error) {
