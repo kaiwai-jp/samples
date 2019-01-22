@@ -282,16 +282,17 @@ class WebRTC {
         var outputBuffer = e.outputBuffer;
         var channel1 = outputBuffer.getChannelData(0);
         var channel2 = outputBuffer.getChannelData(1);
-        let numberOfPulls = channel1.length / 480;
+        let numberOfPulls = channel1.length / 441;
+        console.log(channel1.length);
         var offset = 0;
         for(i=0; i < numberOfPulls; i++) {
           const audioFrame = new Module.AudioFrame();
           audioFrame.setNumChannels(2);
-          audioFrame.setSampleRateHz(48000);
-          audioFrame.setSamplesPerChannel(480);
+          audioFrame.setSampleRateHz(44100);
+          audioFrame.setSamplesPerChannel(441);
 
           // pre-allocate!
-          for (let i = 0; i < 480 * 2; i++) {
+          for (let i = 0; i < 441 * 2; i++) {
             audioFrame.data().push_back(0);
           }
 
