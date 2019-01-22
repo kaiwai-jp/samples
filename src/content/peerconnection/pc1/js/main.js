@@ -116,7 +116,9 @@ class WebRTC {
           for (let i = 0; i < packet.length; i++) {
             receivedBuffer.push_back(packet[i]);
           }
-          call.deliverPacket(receivedBuffer);
+          setTimeout(() => {
+              call.deliverPacket(receivedBuffer);
+          }, 0);
           // uistats.audioDecTime.set(Date.now() - time);
         };
       },
