@@ -10,11 +10,13 @@ navigator.mediaDevices.getUserMedia({video: {width: 320, height: 240}})
     pc1.onicecandidate = e => pc2.addIceCandidate(e.candidate);
     pc2.onicecandidate = e => pc1.addIceCandidate(e.candidate);
     const sendChannel = pc1.createDataChannel('sendDataChannel');
+    sendChannel.binaryType = 'arraybuffer';
     pc1.addTrack(stream.getTracks()[0], stream);
     let receiveChannel;
     const recvBuffer = [];
     pc2.ondatachannel = e => {
       receiveChannel = e.channel;
+      receiveChannel.binaryType = 'arraybuffer';
       receiveChannel.onmessage = (ev) => {
         const encoded = new Uint8Array(ev.data);
         const {data, width, height} = libwebp.decode(encoded);
