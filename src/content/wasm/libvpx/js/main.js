@@ -61,18 +61,16 @@ navigator.mediaDevices.getUserMedia({video: {width: 320, height: 240}})
 
         const packets = decbuf.slice(0, decbuflen);
         decbuflen = 0;
+        /*
+        const drop = Math.random() < 0.1;
+        if (drop) return; // 10% packet loss.
+        */
         vpxdec_.postMessage({
           id: 'dec',
           type: 'call',
           name: 'decode',
           args: [packets.buffer],
         }, [packets.buffer]);
-        /*
-        const {data, width, height} = libwebp.decode(encoded);
-        const frame = remoteContext.createImageData(width, height);
-        frame.data.set(data, 0);
-        remoteContext.putImageData(frame, 0, 0);
-        */
       };
     };
     pc2.ontrack = (e) => remoteVideo2.srcObject = e.streams[0];
@@ -110,7 +108,6 @@ navigator.mediaDevices.getUserMedia({video: {width: 320, height: 240}})
             encoding = true;
             localContext.drawImage(localVideo, 0, 0, width, height);
             const frame = localContext.getImageData(0, 0, width, height);
-            //const encoded = libwebp.encode(frame);
             vpxenc_.postMessage({
                 id: 'enc',
                 type: 'call',
