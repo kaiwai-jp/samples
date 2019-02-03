@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<!--
+ *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree.
+-->
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta name="description" content="WebRTC code samples">
+    <meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1, maximum-scale=1">
+    <meta itemprop="description" content="Client-side WebRTC code samples">
+    <meta itemprop="image" content="../../../images/webrtc-icon-192x192.png">
+    <meta itemprop="name" content="WebRTC code samples">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta id="theme-color" name="theme-color" content="#ffffff">
+
+    <base target="_blank">
+
+    <title>Peer connection</title>
+
+    <link rel="icon" sizes="192x192" href="../../../images/webrtc-icon-192x192.png">
+    <link href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="../../../css/main.css"/>
+    <link rel="stylesheet" href="css/main.css"/>
+
+</head>
+
+<body>
+
+<div id="container">
+    <video id="remoteVideo" playsinline autoplay></video>
+    <button id="startButton">Start</button>
+</div>
+
+<script>
+function intToFloat(intSample) {
+    return intSample / 32768;
+}
+const receivingSamplesPerCallback = 2048;
+
+var packets = [];
+var receivingQueueChannel1 = [];
+var receivingQueueChannel2 = [];
+class Play {
+  constructor() {
+    this._loadWasm('/src/wasm/webrtc/webrtc.js');
+  }
+
+  _loadWasm(src) {
+    console.warn('loading wasm module:', src);
+    const time = Date.now();
+    const script = document.createElement('script');
+    script.src = src;
+
+    script.onerror = () => {
+      console.warn('failed to load the script:', src);
+    };
+
+    script.onload = () => {
+      console.log('script loaded, waiting for wasm...');
+
+      Module.onRuntimeInitialized = () => {
+        console.warn('webrtc.wasm loaded:', Date.now() - time, 'ms');
+        console.log('wasm module:', Module);
+        // this._showTheStartButton();
+        this.read();
+      };
+    };
+    document.body.appendChild(script);
+  }
+
+  read() {
+    const Transport = Module.Transport.extend("Transport", {
+      __construct: function () {
+        this.__parent.__construct.call(this);
+      },
+      __destruct: function () {
+        this.__parent.__destruct.call(this);
+      },
+      sendPacket: function (payload) {
+        return true;
+      },
+    });
+    this.audioDeviceModule = Module.createAudioDeviceModule();
+    this.audioDeviceModule.startPlayout();
+    this.call = new Module.Call(new Transport(), this.audioDeviceModule);
+
+    let receiveAudioCodecs = new Module.VectorAudioCodec();
+    receiveAudioCodecs.push_back({
+      payloadType: 42,
+      name: 'opus',
+      clockrateHz: 48000,
+      numChannels: 2,
+    });
+    let receiveStream = this.call.createAudioReceiveStream({
+      localSsrc: 345,
+      remoteSsrc: 123,
+      codecs: receiveAudioCodecs,
+    });
+    receiveStream.start();
+
+    var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let destination = audioCtx.createMediaStreamDestination();
+    document.querySelector("#remoteVideo").srcObject = destination.stream;
+    var playbackProcessor = audioCtx.createScriptProcessor(receivingSamplesPerCallback, 2, 2);
+    var oscillator = audioCtx.createOscillator();
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(441, audioCtx.currentTime); // value in hertz
+    oscillator.connect(playbackProcessor).connect(audioCtx.destination);
+    playbackProcessor.onaudioprocess = (e) => {
+      var outputBuffer = e.outputBuffer;
+      var channel1 = outputBuffer.getChannelData(0);
+      var channel2 = outputBuffer.getChannelData(1);
+      let numberOfPulls = channel1.length / 441;
+      var offset = 0;
+
+      if (receivingQueueChannel1.length < receivingSamplesPerCallback && packets.length) {
+          for (var i = 0; i < 3 && packets.length; i++) {
+              let packet = packets.shift();
+              let receivedBuffer = new Module.VectorUint8();
+              for (let i = 0; i < packet.length; i++) {
+                  receivedBuffer.push_back(packet[i]);
+              }
+              this.call.deliverPacket(receivedBuffer);
+          }
+          for(i=0; i < numberOfPulls; i++) {
+            const audioFrame = new Module.AudioFrame();
+            audioFrame.setNumChannels(2);
+            audioFrame.setSampleRateHz(44100);
+            audioFrame.setSamplesPerChannel(441);
+
+            // pre-allocate!
+            for (let i = 0; i < 441 * 2; i++) {
+              audioFrame.data().push_back(0);
+            }
+
+            this.audioDeviceModule.pullRenderData(audioFrame);
+
+            for(var s = 0; s < audioFrame.data().size() / 2; s++) {
+              receivingQueueChannel1.push(intToFloat(audioFrame.data().get(s*2)));
+              receivingQueueChannel2.push(intToFloat(audioFrame.data().get(s*2+1)));
+            }
+          }
+      }
+
+      if(receivingQueueChannel1.length >= receivingSamplesPerCallback) {
+        let old = receivingQueueChannel1.length;
+        for(var i=0; i < receivingSamplesPerCallback; i++) {
+          channel1[i] = receivingQueueChannel1[i];
+          channel2[i] = receivingQueueChannel2[i];
+        }
+        receivingQueueChannel1.splice(0, receivingSamplesPerCallback);
+        receivingQueueChannel2.splice(0, receivingSamplesPerCallback);
+      }
+    }
+    oscillator.start();
+  }
+};
+
+let comeoutand;
+startButton.addEventListener('click', () => {
+    comeoutand = new Play();
+});
+
+</script>
+</body>
+</html>
