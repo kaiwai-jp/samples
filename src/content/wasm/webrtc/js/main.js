@@ -8,8 +8,6 @@
 
 'use strict';
 
-const packets = [];
-
 const startButton = document.getElementById('startButton');
 const callButton = document.getElementById('callButton');
 const hangupButton = document.getElementById('hangupButton');
@@ -113,7 +111,7 @@ class WebRTC {
           const time = Date.now();
           const packet = new Uint8Array(event.data);
           // uistats.rtpRecvSize.set(packet.length);
-          console.log('Received a RTP packet:', packet.length, 'bytes', packet);
+          // console.log('Received a RTP packet:', packet.length, 'bytes', packet);
           let receivedBuffer = new Module.VectorUint8();
           for (let i = 0; i < packet.length; i++) {
             receivedBuffer.push_back(packet[i]);
@@ -131,11 +129,10 @@ class WebRTC {
         // console.log(payload);
         //console.log('Sending a RTP packet:', payload.length, 'bytes', payload);
         // uistats.rtpSendSize.set(payload.length);
-        //console.log('Sending a RTP packet:', payload.length, 'bytes', payload);
+        // console.log('Sending a RTP packet:', payload.length, 'bytes');
         this.count++;
         const payloadCopy = new Uint8Array(payload);
-        packets.push([...payload]);
-        // dc.send(payloadCopy);
+        dc.send(payloadCopy);
         return true;
       },
     });
@@ -154,11 +151,6 @@ class WebRTC {
 
     let videoSendStream = call.createVideoSendStream({
       ssrc: 234,
-      cname: 'cname',
-      payloadType: 43,
-      codecName: 'vp8',
-      clockrateHz: 90000,
-      numChannels: 1,
     });
     videoSendStream.start();
 
@@ -182,7 +174,7 @@ class WebRTC {
           return;
         localContext2d.drawImage(miniVideo, 0, 0, width, height);
         const {data: rgba} = localContext2d.getImageData(0, 0, width, height);
-        // console.log('Sending raw video frame', rgba);
+        console.log('Sending raw video frame', rgba);
 
         const rgbaSize = width * height * 4;
         // const yuvSize = this.width * this.height * 3 / 2; // 48 bits per 4 pixels
@@ -268,9 +260,6 @@ class WebRTC {
       // var processor = audioCtx.createScriptProcessor(framesPerPacket, 2, 2);
       var processor = audioCtx.createScriptProcessor(framesPerPacket, 1, 1);
       source.connect(processor).connect(audioCtx.destination);
-
-      let sendCount = 0;
-      let lastSend = Date.now();
       processor.onaudioprocess = function (e) {
         var channelData = e.inputBuffer.getChannelData(0);
         // could look at e.inputBuffer.numChannels
@@ -301,7 +290,6 @@ class WebRTC {
         var outputBuffer = e.outputBuffer;
         var channel1 = outputBuffer.getChannelData(0);
         var channel2 = outputBuffer.getChannelData(1);
-        /*
         let numberOfPulls = channel1.length / 441;
         var offset = 0;
         for(i=0; i < numberOfPulls; i++) {
@@ -332,7 +320,6 @@ class WebRTC {
         receivingQueueChannel1.splice(0, receivingSamplesPerCallback);
         receivingQueueChannel2.splice(0, receivingSamplesPerCallback);
         }
-        */
       }
       oscillator.start();
     };
