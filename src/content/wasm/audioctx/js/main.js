@@ -33,7 +33,7 @@ navigator.mediaDevices.getUserMedia({audio: true})
     const source = audioCtx.createMediaStreamSource(stream);
     // var processor = audioCtx.createScriptProcessor(framesPerPacket, 2, 2);
     const processor = audioCtx.createScriptProcessor(framesPerPacket, 1, 1);
-    source.connect(processor).connect(audioCtx.destination);
+    source.connect(processor);
     processor.onaudioprocess = function (e) {
       if (sendChannel.readyState !== 'open') return;
       const channelData = e.inputBuffer.getChannelData(0);
