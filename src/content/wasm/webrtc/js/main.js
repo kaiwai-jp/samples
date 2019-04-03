@@ -64,7 +64,7 @@ class WebRTC {
     this.sendVideo = sendVideo;
     // $(UI_CONSTANTS.miniVideo) from appcontroller.js.
     this.miniVideo = miniVideo;
-    this._loadWasm('/src/wasm/webrtc/webrtc.js');
+    this._loadWasm('../../../wasm/webrtc/webrtc.js');
     this.dc = dc;
   }
 
