@@ -15,7 +15,7 @@
 'use strict';
 
 var LibWebP = function() {
-  const src = '/src/wasm/libwebp/a.out.js';
+  const src = '../../../wasm/libwebp/a.out.js';
   console.warn('loading wasm module:', src);
   const script = document.createElement('script');
   script.src = src;
