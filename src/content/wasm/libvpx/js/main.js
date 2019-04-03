@@ -2,7 +2,7 @@
 const localContext = localCanvas.getContext('2d');
 const remoteContext = remoteCanvas.getContext('2d');
 
-const src = '/src/wasm/libvpx/vpx-worker.js';
+const src = '../../../wasm/libvpx/vpx-worker.js';
 
 const vpxenc_ = new Worker(src);
 const vpxdec_ = new Worker(src);

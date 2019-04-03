@@ -7,7 +7,7 @@
  */
 'use strict';
 
-importScripts('/src/wasm/libvpx/libvpx.js');
+importScripts('./libvpx.js');
 
 const KB = 0x400; // 2**10
 const MB = KB * KB;
